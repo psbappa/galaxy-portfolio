@@ -1,4 +1,4 @@
-import GalaxyPortfolio from "@/components/GalaxyPortfolio1";
+// import GalaxyPortfolio from "@/components/GalaxyPortfolio1";
 import RealGalaxy from "@/components/RealGalaxy";
 
 export default function Home() {
@@ -7,7 +7,7 @@ export default function Home() {
       <div className="fixed inset-0" style={{ width: "100vw", height: "100vh" }}>
         <RealGalaxy />
       </div>
-      <GalaxyPortfolio />
+      {/* <GalaxyPortfolio /> */}
     </>
   );
 }
