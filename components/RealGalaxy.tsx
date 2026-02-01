@@ -69,7 +69,7 @@ function Sun() {
         <meshStandardMaterial
           color="#fff2a0"
           emissive="#ffffff"
-          emissiveIntensity={3}
+          emissiveIntensity={2}
           transparent
           opacity={0.85}
           blending={THREE.AdditiveBlending}
@@ -1194,7 +1194,7 @@ export default function RealGalaxy() {
             <DeepSpaceRedStar position={[35, 18, -160]} size={1.5} seed={4} orbitRadius={8} orbitSpeed={0.015} drift={2} />
           </group>
 
-          <MovingSpaceStation pathCenter={[0, 0, 0]} orbitRadius={18} speed={0.05} scale={0.045} tilt={0.15} seed={3} />
+          <MovingSpaceStation pathCenter={[1, 5, 9]} orbitRadius={18} speed={0.05} scale={0.08} tilt={0.89} seed={3} />
 
           {/* PLANET SYSTEM */}
           <group>
@@ -1239,7 +1239,7 @@ export default function RealGalaxy() {
             trailColor="#ff6600" 
           /> */}
 
-          <MovingSpaceStation pathCenter={[0, 0, 0]} orbitRadius={18} speed={0.02} scale={0.12} tilt={0.15} seed={3} />
+          <MovingSpaceStation pathCenter={[0, 0, 0]} orbitRadius={18} speed={0.02} scale={0.3} tilt={0.15} seed={3} />
            
           <GiantSpaceStation position={[50, 10, -200]} baseScale={0.7} minVisibleScale={0.5} rotationSpeed={0.004} />
 
@@ -1253,7 +1253,7 @@ export default function RealGalaxy() {
           {/* CINEMATIC POST EFFECTS */}
           <EffectComposer>
             <Bloom
-              intensity={1.2}            // 🔥 glow strength
+              intensity={3}            // 🔥 glow strength
               luminanceThreshold={0.15} // kitna bright hone pe glow aaye
               luminanceSmoothing={0.9}
               blendFunction={BlendFunction.ADD}
@@ -1261,7 +1261,7 @@ export default function RealGalaxy() {
             <Vignette
               eskil={false}
               offset={0.15}
-              darkness={0.9}             // lens edge darkening
+              darkness={0.7}             // lens edge darkening
             />
           </EffectComposer>
         </Canvas>
