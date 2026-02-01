@@ -245,43 +245,43 @@ export default function RealGalaxy() {
       {/* NEAR STARS */}
       <Stars radius={40} depth={20} count={4000} factor={1.5} fade />
 
-      <group position={[-22, -4, -45]}>
+      {/* <group position={[-22, -4, -45]}>
         <DeepSpaceRedStar position={[-22, -4, -45]} size={9} seed={7} />
         <LocalStarDust radius={50} count={800} />
-      </group>
+      </group> */}
 
       {/* PARALLAX STAR DEPTH */}
-      <ParallaxStars radius={200} count={18000} speed={0.01} />
+      {/* <ParallaxStars radius={200} count={18000} speed={0.01} />
       <ParallaxStars radius={80} count={6000} speed={0.03} />
-      <ParallaxStars radius={40} count={3000} speed={0.06} />
+      <ParallaxStars radius={40} count={3000} speed={0.06} /> */}
 
       {/* PLANETS */}
-      <ProceduralPlanet
+      {/* <ProceduralPlanet
         radius={2.8}
         distance={25}
         speed={0.015}
         color="#ff6b2d"
         emissive="#331100"
         seed={1}
-      />
+      /> */}
 
-      <ProceduralPlanet
+      {/* <ProceduralPlanet
         radius={1.6}
         distance={40}
         speed={0.01}
         color="#c8ff5a"
         emissive="#112200"
         seed={3}
-      />
+      /> */}
 
-      <ProceduralPlanet
+      {/* <ProceduralPlanet
         radius={0.9}
         distance={15}
         speed={0.03}
         color="#6dff1f"
         emissive="#1a3300"
         seed={7}
-      />
+      /> */}
 
       {/* YOUR EXISTING STARS */}
       <MovingRedStar position={[-4, -0.5, 1]} size={0.25} speed={0.5} />

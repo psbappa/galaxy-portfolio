@@ -228,16 +228,15 @@ export default function RealGalaxy() {
 
   return (
     <>
-      Simple 5 stars
       <Canvas
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "block",
-      }}
-      camera={{ position: [0, 4, 12], fov: 45 }}
-      gl={{ antialias: true }}
-    >
+        style={{
+          width: "100vw",
+          height: "100vh",
+          display: "block",
+        }}
+        camera={{ position: [0, 4, 12], fov: 45 }}
+        gl={{ antialias: true }}
+      >
         <color attach="background" args={["#02030a"]} />
 
         {/* LIGHT */}
