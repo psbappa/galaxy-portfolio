@@ -229,15 +229,7 @@ export default function RealGalaxy() {
   }
 
   return (
-    <Canvas
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "block",
-      }}
-      camera={{ position: [0, 4, 12], fov: 45 }}
-      gl={{ antialias: true }}
-    >
+    <Canvas camera={{ position: [0, 4, 12], fov: 45 }}>
       <color attach="background" args={["#02030a"]} />
 
       {/* LIGHT */}

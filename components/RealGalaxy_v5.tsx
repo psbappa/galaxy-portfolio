@@ -243,7 +243,7 @@ function WarpTunnel() {
 }
 
 /* ================= CAMERA DRIFT ================= */
-function InfiniteCameraDrift({ warp }) {
+function InfiniteCameraDrift({ warp }: { warp: number }) {
   useFrame(({ camera }) => {
     camera.position.z -= 0.02 + warp;
   });

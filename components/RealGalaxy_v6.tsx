@@ -168,7 +168,7 @@ function Asteroids({ count = 70 }) {
 }
 
 /* ================= RINGS ================= */
-function PlanetRing({ inner, outer, tilt, speed }) {
+function PlanetRing({ inner, outer, tilt, speed }: PlanetRingProps) {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(() => ref.current && (ref.current.rotation.z += speed));
 
@@ -233,7 +233,7 @@ function WarpTunnel() {
 }
 
 /* ================= CAMERA DRIFT ================= */
-function InfiniteCameraDrift({ warp }) {
+function InfiniteCameraDrift({ warp }: { warp: number }) {
   useFrame(({ camera }) => {
     camera.position.z -= 0.02 + warp;
   });
