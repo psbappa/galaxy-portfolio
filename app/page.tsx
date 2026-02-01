@@ -12,9 +12,9 @@ export default function Page() {
     const ctx = getExperienceContext();
 
     // timeline orchestration
-    // setTimeout(() => {
-    //   setText(ctx.introText);
-    // }, 1500);
+    setTimeout(() => {
+      setText(ctx.introText);
+    }, 1500);
 
     setTimeout(() => {
       setText(null);

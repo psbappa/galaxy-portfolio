@@ -1116,10 +1116,10 @@ function MilkyWayGalaxy({
    MAIN SCENE + LOADING OVERLAY
 ===================================================== */
 export default function RealGalaxy() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 2800);
+    const t = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(t);
   }, []);
 
