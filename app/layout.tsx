@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Galaxy Portfolio",
-  description: "Calm. Focused. Systems-driven frontend portfolio."
+  title: "Galaxy Experience",
+  description: "A live 3D astronomical experience"
 };
 
 export default function RootLayout({
