@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useRef, useEffect, useState } from "react";
@@ -78,7 +78,7 @@ function LocalStarDust({ radius = 8, count = 500 }) {
 }
 
 /* =====================================================
-   MOVING EARTH
+   REALISTIC EARTH
 ===================================================== */
 function MovingEarthStar({
   position,
@@ -182,7 +182,7 @@ function CameraDust() {
 
   return (
     <group ref={ref}>
-      <Stars radius={10} depth={5} count={1000} factor={0.4} fade />
+      <Stars radius={10} depth={5} count={1200} factor={0.4} fade />
     </group>
   );
 }
@@ -235,9 +235,6 @@ function SaturnPlanet({
   );
 }
 
-/* =====================================================
-   LIVING STARS
-===================================================== */
 function LivingStars({
   radius,
   depth,
@@ -256,56 +253,21 @@ function LivingStars({
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
+
+    // slow cosmic drift
     ref.current.rotation.y = t * speed;
     ref.current.rotation.x = t * speed * 0.3;
   });
 
   return (
     <group ref={ref}>
-      <Stars radius={radius} depth={depth} count={count} factor={factor} fade />
-    </group>
-  );
-}
-
-/* =====================================================
-   STAR LAYER GROUP (DYNAMIC ZOOM-BASED)
-===================================================== */
-function StarsLayerGroup() {
-  const { camera } = useThree();
-  const ref = useRef<THREE.Group>(null);
-
-  // Define layers: near, mid, far
-  const baseLayers = [
-    { radius: 20, depth: 15, baseCount: 400, factor: 0.8, speed: 0.004 },
-    { radius: 60, depth: 40, baseCount: 1000, factor: 1.2, speed: 0.002 },
-    { radius: 140, depth: 100, baseCount: 1000, factor: 2, speed: 0.001 },
-  ];
-
-  const [counts, setCounts] = useState(baseLayers.map(l => l.baseCount));
-
-  useFrame(() => {
-    const distance = camera.position.length(); // zoom distance
-    const newCounts = baseLayers.map((layer, i) => {
-      // closer zoom = more near stars
-      const scale = i === 0 ? 1.2 : i === 1 ? 1 : 0.8;
-      return Math.floor(layer.baseCount * scale * (500 / Math.max(0.1, distance)));
-    });
-    setCounts(newCounts);
-  });
-
-  return (
-    <group ref={ref}>
-      {baseLayers.map((layer, i) => (
-        <ParallaxGroup key={i} parallax={0.04 / (i + 1)}>
-          <LivingStars
-            radius={layer.radius}
-            depth={layer.depth}
-            count={counts[i]}
-            factor={layer.factor}
-            speed={layer.speed}
-          />
-        </ParallaxGroup>
-      ))}
+      <Stars
+        radius={radius}
+        depth={depth}
+        count={count}
+        factor={factor}
+        fade
+      />
     </group>
   );
 }
@@ -371,7 +333,7 @@ export default function RealGalaxy() {
             position: [0, 3, 14],
             fov: 45,
             near: 0.1,
-            far: 5000,
+            far: 5000, // 🔥 allow deep space zoom
           }}
         >
           <color attach="background" args={["#02030a"]} />
@@ -381,15 +343,36 @@ export default function RealGalaxy() {
 
           <CameraDust />
 
-          <StarsLayerGroup />
+          <ParallaxGroup parallax={0.08}>
+            <LocalStarDust radius={20} count={1500} />
+            <MovingEarthStar position={[3, 1, -2]} size={0.1} orbitSpeed={0.8} />
+          </ParallaxGroup>
+
+          <ParallaxGroup parallax={0.04}>
+            <LivingStars
+              radius={60}
+              depth={40}
+              count={6000}
+              factor={1.4}
+              speed={0.003}
+            />
+          </ParallaxGroup>
+
+          <ParallaxGroup parallax={0.015}>
+            <LivingStars
+              radius={140}
+              depth={100}
+              count={12000}
+              factor={2}
+              speed={0.0015}
+            />
+          </ParallaxGroup>
 
           <group position={[-22, -4, -45]}>
             <LocalStarDust radius={20} count={1500} />
             <SaturnPlanet distance={21} speed={0.18} seed={7} />
             <DeepSpaceRedStar position={[35, 18, -160]} size={1.5} seed={4} />
           </group>
-
-          <MovingEarthStar position={[3, 1, -2]} size={0.1} orbitSpeed={0.8} />
 
           <Sun />
 
@@ -399,8 +382,8 @@ export default function RealGalaxy() {
             enableZoom
             enableRotate
             dampingFactor={0.08}
-            minDistance={0.1}
-            maxDistance={5000}
+            minDistance={0.1}     // 🔥 ultra zoom-in
+            maxDistance={5000}    // 🔥 ultra zoom-out
             zoomSpeed={1.2}
             panSpeed={0.8}
           />

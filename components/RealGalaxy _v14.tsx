@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 
 /* =====================================================
    SUN (CENTRAL STAR)
@@ -31,7 +31,7 @@ function Sun() {
 }
 
 /* =====================================================
-   DEEP SPACE RED STAR
+   DEEP SPACE RED STAR (ANCHOR OBJECT)
 ===================================================== */
 function DeepSpaceRedStar({
   position,
@@ -71,14 +71,14 @@ function DeepSpaceRedStar({
 }
 
 /* =====================================================
-   LOCAL STAR DUST
+   LOCAL STAR DUST (STATIC CLUSTER)
 ===================================================== */
 function LocalStarDust({ radius = 8, count = 500 }) {
   return <Stars radius={radius} depth={radius} count={count} factor={0.8} fade />;
 }
 
 /* =====================================================
-   MOVING EARTH
+   REALISTIC EARTH SYSTEM (ENGINEERED)
 ===================================================== */
 function MovingEarthStar({
   position,
@@ -96,6 +96,8 @@ function MovingEarthStar({
   const moonRef = useRef<THREE.Mesh>(null);
 
   const base = useRef(new THREE.Vector3(...position));
+
+  // axial tilt = 23.5°
   const axialTilt = THREE.MathUtils.degToRad(23.5);
 
   useFrame(({ clock }) => {
@@ -103,13 +105,16 @@ function MovingEarthStar({
 
     const t = clock.getElapsedTime();
 
+    /* ---- Earth orbit wobble ---- */
     earthGroup.current.position.x =
       base.current.x + Math.cos(t * orbitSpeed) * 0.25;
     earthGroup.current.position.z =
       base.current.z + Math.sin(t * orbitSpeed) * 0.25;
 
+    /* ---- Earth self rotation ---- */
     earthMesh.current.rotation.y += 0.01 * rotationSpeed;
 
+    /* ---- Moon orbit ---- */
     const moonAngle = t * 0.8;
     moonRef.current.position.set(
       Math.cos(moonAngle) * 0.7,
@@ -120,15 +125,19 @@ function MovingEarthStar({
 
   return (
     <group ref={earthGroup} position={position} rotation={[0, axialTilt, 0]}>
+      {/* EARTH */}
       <mesh ref={earthMesh}>
         <sphereGeometry args={[size, 48, 48]} />
         <meshStandardMaterial
           color="#1f6ed4"
           emissive="#0a2a5a"
           emissiveIntensity={0.9}
+          roughness={0.6}
+          metalness={0.1}
         />
       </mesh>
 
+      {/* ATMOSPHERE */}
       <mesh scale={1.08}>
         <sphereGeometry args={[size, 32, 32]} />
         <meshStandardMaterial
@@ -140,16 +149,22 @@ function MovingEarthStar({
         />
       </mesh>
 
+      {/* MOON */}
       <mesh ref={moonRef}>
         <sphereGeometry args={[size * 0.27, 24, 24]} />
-        <meshStandardMaterial color="#888" emissive="#222" emissiveIntensity={0.3} />
+        <meshStandardMaterial
+          color="#888"
+          emissive="#222"
+          emissiveIntensity={0.3}
+        />
       </mesh>
     </group>
   );
 }
 
+
 /* =====================================================
-   PARALLAX GROUP
+   PARALLAX GROUP (LAYER LOGIC)
 ===================================================== */
 function ParallaxGroup({
   parallax,
@@ -170,7 +185,7 @@ function ParallaxGroup({
 }
 
 /* =====================================================
-   CAMERA DUST
+   CAMERA DUST (LOCKED TO CAMERA)
 ===================================================== */
 function CameraDust() {
   const ref = useRef<THREE.Group>(null);
@@ -182,13 +197,23 @@ function CameraDust() {
 
   return (
     <group ref={ref}>
-      <Stars radius={10} depth={5} count={1000} factor={0.4} fade />
+      <Stars radius={10} depth={5} count={1200} factor={0.4} fade />
     </group>
   );
 }
 
 /* =====================================================
-   SATURN
+   INFINITE CAMERA DRIFT
+===================================================== */
+function InfiniteCameraDrift() {
+  useFrame(({ camera }) => {
+    if (camera.position.z > 2) camera.position.z -= 0.015;
+  });
+  return null;
+}
+
+/* =====================================================
+   SATURN (WITH RING)
 ===================================================== */
 function SaturnPlanet({
   distance,
@@ -203,6 +228,7 @@ function SaturnPlanet({
 
   useFrame(({ clock }) => {
     if (!group.current) return;
+
     const t = clock.getElapsedTime() * speed + seed * 10;
     const spiral = Math.sin(t * 0.3) * 0.8;
 
@@ -219,7 +245,11 @@ function SaturnPlanet({
     <group ref={group}>
       <mesh>
         <sphereGeometry args={[0.9, 48, 48]} />
-        <meshStandardMaterial color="#d6c28b" emissive="#332200" emissiveIntensity={1} />
+        <meshStandardMaterial
+          color="#d6c28b"
+          emissive="#332200"
+          emissiveIntensity={1}
+        />
       </mesh>
 
       <mesh rotation={[Math.PI / 2.2, 0, 0]}>
@@ -236,176 +266,68 @@ function SaturnPlanet({
 }
 
 /* =====================================================
-   LIVING STARS
-===================================================== */
-function LivingStars({
-  radius,
-  depth,
-  count,
-  factor,
-  speed = 0.002,
-}: {
-  radius: number;
-  depth: number;
-  count: number;
-  factor: number;
-  speed?: number;
-}) {
-  const ref = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const t = clock.getElapsedTime();
-    ref.current.rotation.y = t * speed;
-    ref.current.rotation.x = t * speed * 0.3;
-  });
-
-  return (
-    <group ref={ref}>
-      <Stars radius={radius} depth={depth} count={count} factor={factor} fade />
-    </group>
-  );
-}
-
-/* =====================================================
-   STAR LAYER GROUP (DYNAMIC ZOOM-BASED)
-===================================================== */
-function StarsLayerGroup() {
-  const { camera } = useThree();
-  const ref = useRef<THREE.Group>(null);
-
-  // Define layers: near, mid, far
-  const baseLayers = [
-    { radius: 20, depth: 15, baseCount: 400, factor: 0.8, speed: 0.004 },
-    { radius: 60, depth: 40, baseCount: 1000, factor: 1.2, speed: 0.002 },
-    { radius: 140, depth: 100, baseCount: 1000, factor: 2, speed: 0.001 },
-  ];
-
-  const [counts, setCounts] = useState(baseLayers.map(l => l.baseCount));
-
-  useFrame(() => {
-    const distance = camera.position.length(); // zoom distance
-    const newCounts = baseLayers.map((layer, i) => {
-      // closer zoom = more near stars
-      const scale = i === 0 ? 1.2 : i === 1 ? 1 : 0.8;
-      return Math.floor(layer.baseCount * scale * (500 / Math.max(0.1, distance)));
-    });
-    setCounts(newCounts);
-  });
-
-  return (
-    <group ref={ref}>
-      {baseLayers.map((layer, i) => (
-        <ParallaxGroup key={i} parallax={0.04 / (i + 1)}>
-          <LivingStars
-            radius={layer.radius}
-            depth={layer.depth}
-            count={counts[i]}
-            factor={layer.factor}
-            speed={layer.speed}
-          />
-        </ParallaxGroup>
-      ))}
-    </group>
-  );
-}
-
-/* =====================================================
-   MAIN SCENE + LOADING OVERLAY
+   MAIN SCENE
 ===================================================== */
 export default function RealGalaxy() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 2800);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      {/* LOADING OVERLAY */}
-      {loading && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "radial-gradient(circle at center, #02030a, #000)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            animation: "fadeOut 2.8s forwards",
-          }}
-        >
-          <div
-            style={{
-              color: "#9fdcff",
-              fontSize: "1.2rem",
-              letterSpacing: "0.15em",
-              textAlign: "center",
-              animation: "pulse 1.8s ease-in-out infinite",
-            }}
-          >
-            OTHER PLANETS ARE YET TO BE READY TO LAUNCH…
-          </div>
+    <Canvas camera={{ position: [0, 3, 14], fov: 45 }}>
+      <color attach="background" args={["#02030a"]} />
 
-          <style>{`
-            @keyframes fadeOut {
-              0% { opacity: 1; }
-              70% { opacity: 1; }
-              100% { opacity: 0; }
-            }
-            @keyframes pulse {
-              0% { opacity: 0.4; transform: scale(0.98); }
-              50% { opacity: 1; transform: scale(1); }
-              100% { opacity: 0.4; transform: scale(0.98); }
-            }
-          `}</style>
-        </div>
-      )}
+      {/* LIGHT */}
+      <ambientLight intensity={0.6} />
+      <pointLight position={[5, 5, 5]} intensity={3.5} />
 
-      {/* CANVAS */}
-      {!loading && (
-        <Canvas
-          camera={{
-            position: [0, 3, 14],
-            fov: 45,
-            near: 0.1,
-            far: 5000,
-          }}
-        >
-          <color attach="background" args={["#02030a"]} />
+      {/* CAMERA SPACE FEEL */}
+      <CameraDust />
 
-          <ambientLight intensity={0.6} />
-          <pointLight position={[5, 5, 5]} intensity={3.5} />
+      {/* =====================
+          NEAR SPACE LAYER
+      ===================== */}
+      <ParallaxGroup parallax={0.08}>
+        <LocalStarDust radius={20} count={1500} />
+        <MovingEarthStar position={[3, 1, -2]} size={0.1} orbitSpeed={0.8} rotationSpeed={1} />
+      </ParallaxGroup>
 
-          <CameraDust />
+      {/* =====================
+          MID SPACE LAYER
+      ===================== */}
+      <ParallaxGroup parallax={0.04}>
+        <Stars radius={60} depth={40} count={6000} factor={1.4} fade />
+      </ParallaxGroup>
 
-          <StarsLayerGroup />
+      {/* =====================
+          FAR SPACE LAYER
+      ===================== */}
+      <ParallaxGroup parallax={0.015}>
+        <Stars radius={140} depth={100} count={12000} factor={2} fade />
+      </ParallaxGroup>
 
-          <group position={[-22, -4, -45]}>
-            <LocalStarDust radius={20} count={1500} />
-            <SaturnPlanet distance={21} speed={0.18} seed={7} />
-            <DeepSpaceRedStar position={[35, 18, -160]} size={1.5} seed={4} />
-          </group>
+      {/* =====================
+          DEEP SPACE ANCHORS
+      ===================== */}
+      <group position={[-22, -4, -45]}>
+        <LocalStarDust radius={20} count={1500} />
+        <SaturnPlanet distance={21} speed={0.18} seed={7} />
+        <DeepSpaceRedStar position={[35, 18, -160]} size={1.5} seed={4} />
+      </group>
 
-          <MovingEarthStar position={[3, 1, -2]} size={0.1} orbitSpeed={0.8} />
+      
 
-          <Sun />
+      {/* MOTION */}
+      {/* <InfiniteCameraDrift /> */}
 
-          <OrbitControls
-            makeDefault
-            enablePan
-            enableZoom
-            enableRotate
-            dampingFactor={0.08}
-            minDistance={0.1}
-            maxDistance={5000}
-            zoomSpeed={1.2}
-            panSpeed={0.8}
-          />
-        </Canvas>
-      )}
-    </div>
+      <Sun />
+
+      {/* CONTROLS */}
+      <OrbitControls
+        makeDefault
+        enablePan
+        enableZoom
+        enableRotate
+        dampingFactor={0.08}
+        minDistance={2}
+        maxDistance={400}
+      />
+    </Canvas>
   );
 }

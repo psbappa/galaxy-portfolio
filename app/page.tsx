@@ -1,4 +1,4 @@
-import RealGalaxy from "@/components/RealGalaxy_v2";
+import RealGalaxy from "@/components/RealGalaxy";
 
 export default function Home() {
   return (
