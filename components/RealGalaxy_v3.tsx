@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-undef */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -17,8 +18,8 @@ function RedStar({
     <mesh position={position}>
       <sphereGeometry args={[size, 32, 32]} />
       <meshStandardMaterial
-        color="#ff3b1f"
-        emissive="#ff1a00"
+        color="#6dff1f"
+        emissive="#52b903"
         emissiveIntensity={3}
       />
     </mesh>
@@ -133,9 +134,101 @@ function DeepSpaceRedStar({
   );
 }
 
-export default function RealGalaxy() {
+function ProceduralPlanet({
+  radius = 1,
+  distance = 20,
+  speed = 0.02,
+  color = "#ffaa55",
+  emissive = "#331100",
+  tilt = 0.3,
+  seed = 1,
+}: {
+  radius?: number;
+  distance?: number;
+  speed?: number;
+  color?: string;
+  emissive?: string;
+  tilt?: number;
+  seed?: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+
+    const t = clock.getElapsedTime() * speed + seed * 10;
+
+    // NOT perfect circle → realism
+    const x = Math.sin(t) * distance;
+    const z = Math.cos(t * 0.97) * distance;
+    const y = Math.sin(t * 0.3) * 2;
+
+    ref.current.position.set(x, y, z);
+
+    // slow axial rotation
+    ref.current.rotation.y += 0.001;
+    ref.current.rotation.x = tilt;
+  });
+
   return (
-    // <Canvas camera={{ position: [0, 4, 12], fov: 45 }} gl={{ antialias: true }}>
+    <mesh ref={ref}>
+      <sphereGeometry args={[radius, 48, 48]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={emissive}
+        emissiveIntensity={1.2}
+      />
+    </mesh>
+  );
+}
+
+function ParallaxStars({
+  count = 3000,
+  radius = 100,
+  speed = 0.02,
+}: {
+  count?: number;
+  radius?: number;
+  speed?: number;
+}) {
+  const ref = useRef<THREE.Group>(null);
+
+  useFrame(({ camera }) => {
+    if (!ref.current) return;
+
+    // parallax illusion
+    ref.current.position.x = camera.position.x * speed;
+    ref.current.position.y = camera.position.y * speed;
+  });
+
+  return (
+    <group ref={ref}>
+      <Stars
+        radius={radius}
+        depth={radius * 0.6}
+        count={count}
+        factor={2}
+        fade
+      />
+    </group>
+  );
+}
+
+
+export default function RealGalaxy() {
+
+  function InfiniteCameraDrift() {
+    useFrame(({ camera }) => {
+      // as you zoom, slightly shift forward endlessly
+      if (camera.position.z > 2) {
+        camera.position.z -= 0.02;
+      }
+    });
+
+    return null;
+  }
+
+  return (
     <Canvas
       style={{
         width: "100vw",
@@ -147,9 +240,12 @@ export default function RealGalaxy() {
     >
       <color attach="background" args={["#02030a"]} />
 
-      {/* LIGHTING */}
+      {/* LIGHT */}
       <ambientLight intensity={0.6} />
-      <pointLight position={[0, 0, 0]} intensity={4} color="#ffd7a8" />
+      <pointLight position={[0, 0, 0]} intensity={4} />
+
+      {/* STAR DEPTH */}
+      <Stars radius={150} depth={120} count={20000} factor={2} fade />
 
       {/* FAR STARS */}
       <Stars radius={150} depth={120} count={16000} factor={3} fade />
@@ -158,32 +254,59 @@ export default function RealGalaxy() {
       <Stars radius={40} depth={20} count={4000} factor={1.5} fade />
 
       <group position={[-22, -4, -45]}>
-        {/* 🔥 DEEP SPACE RED STARS */}
-        <DeepSpaceRedStar position={[-22, -4, -45]} size={1} seed={7} />
-        <LocalStarDust radius={10} count={1500} />
+        <DeepSpaceRedStar position={[-22, -4, -45]} size={9} seed={7} />
+        <LocalStarDust radius={50} count={800} />
       </group>
 
-      {/* STAR DEPTH */}
-      <Stars radius={150} depth={120} count={20000} factor={2} fade />
+      {/* PARALLAX STAR DEPTH */}
+      <ParallaxStars radius={200} count={18000} speed={0.01} />
+      <ParallaxStars radius={80} count={6000} speed={0.03} />
+      <ParallaxStars radius={40} count={3000} speed={0.06} />
 
-      {/* 🔥 MOVING LAVA STARS */}
-      {/* <MovingRedStar position={[3, 1, -2]} size={0.35} speed={0.8} />
-      <MovingRedStar position={[-4, -0.5, 1]} size={0.25} speed={0.5} /> */}
+      {/* PLANETS */}
+      <ProceduralPlanet
+        radius={2.8}
+        distance={25}
+        speed={0.015}
+        color="#ff6b2d"
+        emissive="#331100"
+        seed={1}
+      />
 
-      {/* GALAXY */}
-      <GalaxyDisk />
+      <ProceduralPlanet
+        radius={1.6}
+        distance={40}
+        speed={0.01}
+        color="#c8ff5a"
+        emissive="#112200"
+        seed={3}
+      />
 
-      {/* 🔥 LAVA STARS */}
+      <ProceduralPlanet
+        radius={0.9}
+        distance={15}
+        speed={0.03}
+        color="#6dff1f"
+        emissive="#1a3300"
+        seed={7}
+      />
+
+      {/* YOUR EXISTING STARS */}
+      <MovingRedStar position={[-4, -0.5, 1]} size={0.25} speed={0.5} />
       <RedStar position={[3, 1, -2]} size={0.35} />
 
-      {/* CAMERA CONTROL */}
+      {/* INFINITE FEEL */}
+      <InfiniteCameraDrift />
+
+      {/* CAMERA */}
       <OrbitControls
         enableZoom
-        minDistance={6}
-        maxDistance={80}
+        minDistance={2}
+        maxDistance={200}
         enablePan={false}
+        dampingFactor={0.08}
         autoRotate
-        autoRotateSpeed={0.25}
+        autoRotateSpeed={0.15}
       />
     </Canvas>
   );
