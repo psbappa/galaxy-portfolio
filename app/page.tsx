@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, JSX } from 'react';
 
 import RealGalaxy from '@/components/RealGalaxy';
 import RealGalaxy_v1 from '@/components/RealGalaxy_v1';
