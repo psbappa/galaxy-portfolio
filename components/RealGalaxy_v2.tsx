@@ -1,313 +1,329 @@
+/* eslint-disable react-hooks/refs */
+/* eslint-disable react-hooks/purity */
+/* eslint-disable react-hooks/immutability */
 /* eslint-disable react/jsx-no-undef */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
-import { useRef } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
+import ProStarfield from "./ProStarfield";
+import SaptarishiStars from "./SaptarishiStars";
 
-function RedStar({
-  position,
-  size = 0.3,
-}: {
-  position: [number, number, number];
-  size?: number;
-}) {
-  return (
-    <mesh position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial
-        color="#6dff1f"
-        emissive="#52b903"
-        emissiveIntensity={3}
-      />
-    </mesh>
-  );
-}
+/* =====================================================
+   SUN (CENTRAL STAR)
+===================================================== */
+function Sun() {
+  const outerRef = useRef<THREE.Mesh>(null!);
+  const coreRef = useRef<THREE.Mesh>(null!);
+  const outerMat = useRef<THREE.MeshStandardMaterial>(null!);
+  const coreMat = useRef<THREE.MeshStandardMaterial>(null!);
 
-function MovingRedStar({
-  position,
-  size = 0.3,
-  speed = 0.5,
-}: {
-  position: [number, number, number];
-  size?: number;
-  speed?: number;
-}) {
-  const starRef = useRef<THREE.Mesh>(null);
-  const basePosition = useRef(new THREE.Vector3(...position));
+  const { camera, clock } = useThree();
 
-  useFrame(({ clock }) => {
-    if (!starRef.current) return;
+  const ZOOM_THRESHOLD = 5;
+  const ZOOM_THRESHOLD_SQ = ZOOM_THRESHOLD * ZOOM_THRESHOLD;
 
+  useFrame(() => {
+    if (!outerRef.current || !coreRef.current) return;
+
+    // 🚀 Use squared distance (no sqrt)
+    const distSq = camera.position.lengthSq();
+
+    // normalize heat
+    const heat = THREE.MathUtils.clamp(1 - distSq / ZOOM_THRESHOLD_SQ, 0, 1);
+
+    // Slow rotation
+    outerRef.current.rotation.y += 0.0008;
+    coreRef.current.rotation.y -= 0.0012;
+
+    // 🔥 Intensity control
+    outerMat.current.emissiveIntensity = 1.5 + heat * 2;
+    coreMat.current.emissiveIntensity = 3 + heat * 6;
+
+    // 🌡 Frame-synced pulse
     const t = clock.getElapsedTime();
+    const pulse = Math.sin(t * 2) * 0.03;
 
-    // subtle floating motion
-    starRef.current.position.y =
-      basePosition.current.y + Math.sin(t * speed) * 0.15;
-
-    // slow rotation (lava feel)
-    starRef.current.rotation.y += 0.003;
+    const scale = 0.75 + heat * 0.25 + pulse;
+    coreRef.current.scale.setScalar(scale);
   });
 
   return (
-    <mesh ref={starRef} position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial
-        color="#ff3b1f"
-        emissive="#ff1a00"
-        emissiveIntensity={2.2 + speed * 0.05}
-      />
-    </mesh>
-  );
-}
+    <group>
+      {/* OUTER */}
+      <mesh ref={outerRef}>
+        {/* Magic number: 0.7, 16, 16 */}
+        <sphereGeometry args={[1.3, 32, 32]} />
+        <meshStandardMaterial
+          ref={outerMat}
+          color="#ff9a00"
+          emissive="#ff6a00"
+          emissiveIntensity={1.5}
+        />
+      </mesh>
 
-function LocalStarDust({ radius = 8, count = 1200 }) {
-  return <Stars radius={radius} depth={radius} count={count} factor={0.8} />;
-}
-
-// GALAXY DISK
-// ⚠️ IMPORTANT RULES (don’t skip)
-// ❌ Never use import img from for Three textures
-// ❌ Don’t put image in app/ or components/
-// ✅ Always use absolute path starting with /textures/
-// ✅ Restart dev server if image not loading
-function GalaxyDisk() {
-  const texture = new THREE.TextureLoader().load("/textures/andromeda.jpg");
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  return (
-    <mesh rotation={[-Math.PI / 2.4, 0, 0]}>
-      <circleGeometry args={[8, 256]} />
-      <meshStandardMaterial
-        map={texture}
-        transparent
-        opacity={1}
-        emissive={new THREE.Color(0xffffff)}
-        emissiveIntensity={1.2}
-      />
-      <pointLight position={[18, 6, -35]} intensity={0.3} color="#ff2200" />
-    </mesh>
-  );
-}
-
-function DeepSpaceRedStar({
-  position,
-  size = 0.6,
-  drift = 0.02,
-  seed = 1,
-}: {
-  position: [number, number, number];
-  size?: number;
-  drift?: number;
-  seed?: number;
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-  const base = useRef(new THREE.Vector3(...position));
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-
-    const t = clock.getElapsedTime() + seed * 10;
-
-    // extremely subtle random-like drift
-    ref.current.position.x = base.current.x + Math.sin(t * 0.1 + seed) * drift;
-    ref.current.position.y =
-      base.current.y + Math.cos(t * 0.13 + seed * 2) * drift;
-    ref.current.position.z =
-      base.current.z + Math.sin(t * 0.08 + seed * 3) * drift;
-
-    // almost unnoticeable rotation
-    ref.current.rotation.y += 0.0005;
-  });
-
-  return (
-    <mesh ref={ref} position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial
-        color="#ff2a00"
-        emissive="#ff1200"
-        emissiveIntensity={1.8}
-      />
-    </mesh>
-  );
-}
-
-function ProceduralPlanet({
-  radius = 1,
-  distance = 20,
-  speed = 0.02,
-  color = "#ffaa55",
-  emissive = "#331100",
-  tilt = 0.3,
-  seed = 1,
-}: {
-  radius?: number;
-  distance?: number;
-  speed?: number;
-  color?: string;
-  emissive?: string;
-  tilt?: number;
-  seed?: number;
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-
-    const t = clock.getElapsedTime() * speed + seed * 10;
-
-    // NOT perfect circle → realism
-    const x = Math.sin(t) * distance;
-    const z = Math.cos(t * 0.97) * distance;
-    const y = Math.sin(t * 0.3) * 2;
-
-    ref.current.position.set(x, y, z);
-
-    // slow axial rotation
-    ref.current.rotation.y += 0.001;
-    ref.current.rotation.x = tilt;
-  });
-
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[radius, 48, 48]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={emissive}
-        emissiveIntensity={1.2}
-      />
-    </mesh>
-  );
-}
-
-function ParallaxStars({
-  count = 3000,
-  radius = 100,
-  speed = 0.02,
-}: {
-  count?: number;
-  radius?: number;
-  speed?: number;
-}) {
-  const ref = useRef<THREE.Group>(null);
-
-  useFrame(({ camera }) => {
-    if (!ref.current) return;
-
-    // parallax illusion
-    ref.current.position.x = camera.position.x * speed;
-    ref.current.position.y = camera.position.y * speed;
-  });
-
-  return (
-    <group ref={ref}>
-      <Stars
-        radius={radius}
-        depth={radius * 0.6}
-        count={count}
-        factor={2}
-        fade
-      />
+      {/* CORE */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[0.9, 24, 24]} />
+        <meshStandardMaterial
+          ref={coreMat}
+          color="#fff2a0"
+          emissive="#ffffff"
+          emissiveIntensity={2}
+          transparent
+          opacity={0.85}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
     </group>
   );
 }
 
-export default function RealGalaxy() {
-  function InfiniteCameraDrift() {
-    useFrame(({ camera }) => {
-      // as you zoom, slightly shift forward endlessly
-      if (camera.position.z > 2) {
-        camera.position.z -= 0.02;
-      }
-    });
+/* =====================================================
+   Moving not LIVING STARS but outer space ke liye perfect hain
+===================================================== */
+function MovingStars() {
+  const groupRef = useRef<THREE.Group>(null!);
 
-    return null;
-  }
+  useFrame((_, delta) => {
+    groupRef.current.rotation.y += delta * 0.02;
+  });
 
   return (
-    <>
-      <Canvas
-        style={{
-          width: "100vw",
-          height: "100vh",
-          display: "block",
-        }}
-        camera={{ position: [0, 4, 12], fov: 45 }}
-        gl={{ antialias: true }}
-      >
-        <color attach="background" args={["#02030a"]} />
+    <group ref={groupRef}>
+      <Stars radius={980} depth={400} count={400} factor={0.8} fade />
+    </group>
+  );
+}
 
-        {/* LIGHT */}
-        <ambientLight intensity={0.6} />
-        <pointLight position={[0, 0, 0]} intensity={4} />
+/* =====================================================
+   OrbitingG and blinking STARS - like sun also
+===================================================== */
+function OrbitingStars() {
+  const groupRef = useRef<THREE.Group>(null!);
 
-        {/* STAR DEPTH */}
-        <Stars radius={150} depth={120} count={20000} factor={2} fade />
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    groupRef.current.rotation.y = t * 0.1;
+  });
 
-        {/* FAR STARS */}
-        <Stars radius={150} depth={120} count={16000} factor={3} fade />
+  return (
+    <group ref={groupRef} position={[0, 0, 0]}>
+      <Stars radius={180} depth={900} count={50} factor={1.2} fade />
+    </group>
+  );
+}
 
-        {/* NEAR STARS */}
-        <Stars radius={40} depth={20} count={4000} factor={1.5} fade />
+/* =====================================================
+   OrbitingG STARS - Just like Outside the sun
+===================================================== */
+function DynamicStars() {
+  const pointsRef = useRef<THREE.Points>(null!);
+  const starCount = 7;
 
-        <group position={[-22, -4, -45]}>
-          <DeepSpaceRedStar position={[-22, -4, -45]} size={9} seed={7} />
-          <LocalStarDust radius={50} count={800} />
-        </group>
+  const positions = useMemo(() => {
+    const arr = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const r = Math.random() * 100;
+      const theta = Math.random() * Math.PI * 2;
 
-        {/* PARALLAX STAR DEPTH */}
-        <ParallaxStars radius={200} count={18000} speed={0.01} />
-        <ParallaxStars radius={80} count={6000} speed={0.03} />
-        <ParallaxStars radius={40} count={3000} speed={0.06} />
+      arr[i * 3] = Math.cos(theta) * r;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      arr[i * 3 + 2] = Math.sin(theta) * r;
+    }
+    return arr;
+  }, []);
 
-        {/* PLANETS */}
-        <ProceduralPlanet
-          radius={2.8}
-          distance={25}
-          speed={0.015}
-          color="#ff6b2d"
-          emissive="#331100"
-          seed={1}
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    pointsRef.current.rotation.y = t * 0.03;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
         />
+      </bufferGeometry>
+      <pointsMaterial size={0.05} sizeAttenuation />
+    </points>
+  );
+}
 
-        <ProceduralPlanet
-          radius={1.6}
-          distance={40}
-          speed={0.01}
-          color="#c8ff5a"
-          emissive="#112200"
-          seed={3}
-        />
+/* =====================================================
+   GalaxyBackground STARS
+===================================================== */
+function GalaxyBackground() {
+  const ref = useRef<THREE.Group>(null!);
 
-        <ProceduralPlanet
-          radius={0.9}
-          distance={15}
-          speed={0.03}
-          color="#6dff1f"
-          emissive="#1a3300"
-          seed={7}
-        />
+  useFrame((_, delta) => {
+    ref.current.rotation.y += delta * 0.01;
+  });
 
-        {/* YOUR EXISTING STARS */}
-        <MovingRedStar position={[-4, -0.5, 1]} size={0.25} speed={0.5} />
-        <RedStar position={[3, 1, -2]} size={0.35} />
+  return (
+    <group ref={ref}>
+      <Stars radius={200} depth={120} count={200} factor={1.5} fade />
+    </group>
+  );
+}
 
-        {/* INFINITE FEEL */}
-        <InfiniteCameraDrift />
+/* =====================================================
+   DEEP SPACE RED STAR
+===================================================== */
 
-        {/* CAMERA */}
-        <OrbitControls
-          enableZoom
-          minDistance={2}
-          maxDistance={200}
-          enablePan={false}
-          dampingFactor={0.08}
-          autoRotate
-          autoRotateSpeed={0.15}
-        />
-      </Canvas>
-    </>
+/* =====================================================
+   LOCAL STAR DUST
+===================================================== */
+
+/* =====================================================
+   MOVING EARTH
+===================================================== */
+
+/* =====================================================
+   PARALLAX GROUP
+===================================================== */
+
+/* =====================================================
+   CAMERA DUST
+===================================================== */
+
+/* =====================================================
+   SATURN
+===================================================== */
+
+/* =====================================================
+   STAR LAYER GROUP (DYNAMIC ZOOM-BASED)
+===================================================== */
+
+/* =========================
+   CAMERA LOCK (IMPORTANT)
+========================= */
+
+/* =========================
+   DISTANT SMALL SPACE STATION
+========================= */
+
+/* =========================
+   BlinkingStars
+========================= */
+
+/* =========================
+   MilkyWayGalaxy
+========================= */
+
+/* =====================================================
+   MAIN SCENE + LOADING OVERLAY
+===================================================== */
+export default function RealGalaxy() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {/* LOADING OVERLAY */}
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "radial-gradient(circle at center, #02030a, #000)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10,
+            animation: "fadeOut 2.8s forwards",
+          }}
+        >
+          <div
+            style={{
+              color: "#9fdcff",
+              fontSize: "1.2rem",
+              letterSpacing: "0.15em",
+              textAlign: "center",
+              animation: "pulse 1.8s ease-in-out infinite",
+            }}
+          >
+            OTHER PLANETS ARE YET TO BE READY TO LAUNCH…
+          </div>
+
+          <style>{`
+            @keyframes fadeOut {
+              0% { opacity: 1; }
+              70% { opacity: 1; }
+              100% { opacity: 0; }
+            }
+            @keyframes pulse {
+              0% { opacity: 0.4; transform: scale(0.98); }
+              50% { opacity: 1; transform: scale(1); }
+              100% { opacity: 0.4; transform: scale(0.98); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* CANVAS */}
+      {!loading && (
+        <Canvas
+          camera={{
+            position: [0, 3, 14],
+            fov: 45,
+            near: 0.1,
+            far: 5000,
+          }}
+        >
+          <color attach="background" args={["#0a0202"]} />
+
+          {/* <MovingStars /> */}
+          {/* <OrbitingStars /> */}
+          <Sun />
+          {/* <ProStarfield /> */}
+          {/* <DynamicStars />           */}
+          {/* <GalaxyBackground /> */}
+
+          <SaptarishiStars />
+
+          {/* CAMERA CONTROL */}
+          <OrbitControls
+            makeDefault
+            enablePan
+            enableZoom
+            enableRotate
+            dampingFactor={0.08}
+            minDistance={0.1}
+            maxDistance={5000}
+            zoomSpeed={1.2}
+            panSpeed={0.8}
+          />
+
+          {/* CINEMATIC POST EFFECTS */}
+          <EffectComposer>
+            <Bloom
+              intensity={3} // 🔥 glow strength
+              luminanceThreshold={0.15} // kitna bright hone pe glow aaye
+              luminanceSmoothing={0.9}
+              blendFunction={BlendFunction.ADD}
+            />
+            <Vignette
+              eskil={false}
+              offset={0.15}
+              darkness={0.7} // lens edge darkening
+            />
+          </EffectComposer>
+        </Canvas>
+      )}
+    </div>
   );
 }

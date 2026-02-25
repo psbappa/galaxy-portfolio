@@ -21,18 +21,18 @@ export function getExperienceContext() {
 
   localStorage.setItem("galaxy_visited", "true");
 
-  let introText = "✨ Welcome, Space Explorer";
+  let introText = "✨ Minakshi, Space Explorer";
 
-  if (isWhatsApp && userName && isReturning) {
-    introText = `🪐 Welcome back, Commander ${userName}\nThe galaxy remembers you.`;
-  } else if (isWhatsApp && userName) {
-    introText = `🌌 Welcome ${userName}\nYou entered through a WhatsApp wormhole ✨`;
-  } else if (isWhatsApp) {
-    introText =
-      "🌌 A traveler arrived from WhatsApp…\nSynchronizing cosmic coordinates 🚀";
-  } else if (isReturning && userName) {
-    introText = `🪐 Welcome back, ${userName}`;
-  }
+  // if (isWhatsApp && userName && isReturning) {
+  //   introText = `🪐 Welcome back, Commander ${userName}\nThe galaxy remembers you.`;
+  // } else if (isWhatsApp && userName) {
+  //   introText = `🌌 Welcome ${userName}\nYou entered through a WhatsApp wormhole ✨`;
+  // } else if (isWhatsApp) {
+  //   introText =
+  //     "🌌 A traveler arrived from WhatsApp…\nSynchronizing cosmic coordinates 🚀";
+  // } else if (isReturning && userName) {
+  //   introText = `🪐 Welcome back, ${userName}`;
+  // }
 
   return {
     isWhatsApp,
