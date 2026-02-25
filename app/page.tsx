@@ -14,7 +14,7 @@ export default function Page() {
     // timeline orchestration
     setTimeout(() => {
       // setText(ctx.introText);
-      setText("💍 Minakshi weds Bappa 💖");
+      setText("💍 Minakshi 💖");
     }, 3500);
 
     setTimeout(() => {
